@@ -8,6 +8,8 @@ const customerRoutes = require("./routes/customerRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const holidayRoutes = require("./routes/holidayRoutes");
 const billRoutes = require("./routes/billRoutes");
+const calendarRoutes = require("./routes/calendarRoutes");
+
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/holidays", holidayRoutes);
 app.use("/api/bills", billRoutes);
+app.use("/api/calendar", calendarRoutes);
+
 
 // Test route
 app.get("/", (req, res) => {

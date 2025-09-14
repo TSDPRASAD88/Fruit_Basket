@@ -37,7 +37,7 @@ const CustomerCalendar: React.FC<CustomerCalendarProps> = ({
   const fetchCalendar = async () => {
     try {
       const res = await axios.get<MarkedDatesType>(
-        `${API_URL}/api/deliveries/calendar/${customerId}/${year}/${month}`
+        `${API_URL}/api/calendar/${customerId}/${year}/${month}`
       );
 
       setMarkedDates(res.data);
