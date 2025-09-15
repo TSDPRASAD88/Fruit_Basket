@@ -2,26 +2,10 @@ const mongoose = require("mongoose");
 
 const customerSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    address: {
-      type: String,
-    },
-    startDate: {
-      type: Date,
-      default: Date.now,
-    },
-    active: {
-      type: Boolean,
-      default: true,
-    },
+    name: { type: String, required: true },
+    phone: { type: String, required: true, unique: true },
+    address: { type: String },
+    active: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

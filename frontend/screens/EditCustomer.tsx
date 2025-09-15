@@ -1,95 +1,80 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+// import React from "react";
+// import { View, StyleSheet } from "react-native";
+// import CustomerEditor from "../components/CustomerEditor";
+
+// const EditCustomer = ({ route }: any) => {
+//   const { customerId } = route.params;
+//   return (
+//     <View style={styles.container}>
+//       <CustomerEditor customerId={customerId} />
+//     </View>
+//   );
+// };
+
+// export default EditCustomer;
+
+// const styles = StyleSheet.create({ container: { flex: 1 } });
+
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import axios from "axios";
-import CustomerCalendar from "../components/CustomerCalendar";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL; // ✅ from .env
 
-const EditCustomer: React.FC<{ route: any }> = ({ route }) => {
-  const customerId = route.params.customerId;
-  const [customer, setCustomer] = useState<any>(null);
-  const [status, setStatus] = useState<"Working" | "Holiday">("Working");
-  const [calendar, setCalendar] = useState<{ [key: string]: any }>({});
-  const [received, setReceived] = useState(0);
-  const [missed, setMissed] = useState(0);
+const EditCustomer = ({ route, navigation }: any) => {
+  const { customer } = route.params;
 
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [name, setName] = useState(customer.name);
+  const [phone, setPhone] = useState(customer.phone);
+  const [address, setAddress] = useState(customer.address);
 
-  useEffect(() => {
-    fetchCustomer();
-  }, []);
-
-  const fetchCustomer = async () => {
+  const handleUpdate = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/customers/${customerId}`);
-      setCustomer(res.data);
-      setStatus(res.data.status);
-      fetchCalendar();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchCalendar = async () => {
-    try {
-      const res = await axios.put(`${API_URL}/api/customers/${customerId}`, { status });
-      setCalendar(res.data.calendar);
-
-      let r = 0, m = 0;
-      Object.values(res.data.calendar).forEach((day: any) => {
-        day.dotColor === "green" ? r++ : m++;
+      await axios.put(`${API_URL}/api/customers/${customer._id}`, {
+        name,
+        phone,
+        address,
       });
-      setReceived(r);
-      setMissed(m);
+      Alert.alert("Success", "Customer updated successfully!");
+      navigation.goBack(); // 🔙 return to AllCustomers
     } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const saveStatus = async () => {
-    try {
-      const res = await axios.put(`${API_URL}/api/customers/${customerId}`, { status });
-      setCustomer(res.data.customer);
-      setCalendar(res.data.calendar);
-
-      let r = 0, m = 0;
-      Object.values(res.data.calendar).forEach((day: any) => {
-        day.dotColor === "green" ? r++ : m++;
-      });
-      setReceived(r);
-      setMissed(m);
-
-      alert("Status and calendar updated!");
-    } catch (err) {
-      console.error(err);
+      console.error("Error updating customer:", err);
+      Alert.alert("Error", "Failed to update customer.");
     }
   };
 
   return (
     <View style={styles.container}>
-      {customer && (
-        <>
-          <Text style={styles.header}>{customer.name}</Text>
-          <Text>Phone: {customer.phone}</Text>
-          <Text>Address: {customer.address}</Text>
+      <Text style={styles.header}>Edit Customer</Text>
 
-          <Text style={{ marginTop: 10 }}>Status:</Text>
-          <Picker selectedValue={status} onValueChange={setStatus} style={{ height: 50, width: 200 }}>
-            <Picker.Item label="Working" value="Working" />
-            <Picker.Item label="Holiday" value="Holiday" />
-          </Picker>
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Phone"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Address"
+        value={address}
+        onChangeText={setAddress}
+      />
 
-          <Button title="Save Status" onPress={saveStatus} />
-
-          <CustomerCalendar customerId={customerId} year={year} month={month} />
-
-          <Text style={{ marginTop: 10 }}>
-            Received Days: {received} | Missed Days: {missed}
-          </Text>
-        </>
-      )}
+      <Button title="Update" onPress={handleUpdate} />
     </View>
   );
 };
@@ -98,5 +83,12 @@ export default EditCustomer;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { fontSize: 20, fontWeight: "bold" },
+  header: { fontSize: 20, fontWeight: "bold", marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 12,
+  },
 });

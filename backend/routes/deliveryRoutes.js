@@ -1,103 +1,154 @@
+// routes/deliveryRoutes.js
 const express = require("express");
 const Delivery = require("../models/Delivery");
 const Customer = require("../models/Customer");
 
 const router = express.Router();
 
-// -----------------------------
-// Add new delivery
-// -----------------------------
+/**
+ * 📌 Add a single delivery (default = today)
+ * Body: { customerId, status?, notes?, date? }
+ */
 router.post("/", async (req, res) => {
   try {
-    const { customer, date, status, notes } = req.body;
-    const delivery = new Delivery({ customer, date, status, notes });
-    await delivery.save();
-    res.status(201).json(delivery);
-  } catch (err) {
-    res.status(400).json({ message: "Error adding delivery", error: err.message });
-  }
-});
+    const { customerId, status = "delivered", notes, date } = req.body;
 
-// -----------------------------
-// Get deliveries by date (with automatic Sunday handling)
-// -----------------------------
-router.get("/by-date/:date", async (req, res) => {
-  try {
-    const date = new Date(req.params.date);
-    const day = date.getDay(); // 0 = Sunday
-
-    const customers = await Customer.find({ active: true });
-
-    if (day === 0) {
-      // Automatically mark all active customers as missed on Sunday
-      const bulkOps = customers.map(c => ({
-        updateOne: {
-          filter: { customer: c._id, date },
-          update: { status: "missed" },
-          upsert: true,
-        },
-      }));
-      await Delivery.bulkWrite(bulkOps);
-
-      const deliveries = await Delivery.find({ date }).populate("customer");
-      return res.json(deliveries);
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
-    // Normal day
-    const deliveries = await Delivery.find({ date }).populate("customer");
-    res.json(deliveries);
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
-  }
-});
+    const deliveryDate = date ? new Date(date) : new Date();
+    deliveryDate.setHours(0, 0, 0, 0);
 
-// -----------------------------
-// Update delivery
-// -----------------------------
-router.put("/:id", async (req, res) => {
-  try {
-    const updatedDelivery = await Delivery.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    // Prevent duplicates for the same customer + date
+    const existing = await Delivery.findOne({ customer: customerId, date: deliveryDate });
+    if (existing) {
+      return res.status(400).json({ success: false, message: "Delivery already exists for this customer today" });
+    }
+
+    const delivery = new Delivery({
+      customer: customerId,
+      status,
+      notes,
+      date: deliveryDate,
     });
-    res.json(updatedDelivery);
+
+    await delivery.save();
+    res.status(201).json({ success: true, delivery });
   } catch (err) {
-    res.status(400).json({ message: "Error updating delivery", error: err.message });
+    res.status(500).json({ success: false, message: "Error saving delivery", error: err.message });
   }
 });
 
-// -----------------------------
-// Delete delivery
-// -----------------------------
-router.delete("/:id", async (req, res) => {
+/**
+ * 📌 Add multiple deliveries at once (bulk for today)
+ * Body: { customerIds: [], status?, date? }
+ */
+router.post("/bulk", async (req, res) => {
   try {
-    await Delivery.findByIdAndDelete(req.params.id);
-    res.json({ message: "Delivery deleted" });
+    const { customerIds = [], status = "delivered", date } = req.body;
+
+    if (!Array.isArray(customerIds) || customerIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No customerIds provided" });
+    }
+
+    const deliveryDate = date ? new Date(date) : new Date();
+    deliveryDate.setHours(0, 0, 0, 0);
+
+    // Filter out customers who already have a delivery for that date
+    const existingDeliveries = await Delivery.find({
+      customer: { $in: customerIds },
+      date: deliveryDate,
+    }).select("customer");
+
+    const existingIds = existingDeliveries.map(d => d.customer.toString());
+    const newDeliveries = customerIds
+      .filter(id => !existingIds.includes(id))
+      .map(id => ({
+        customer: id,
+        status,
+        date: deliveryDate,
+      }));
+
+    if (newDeliveries.length === 0) {
+      return res.status(400).json({ success: false, message: "All customers already have deliveries on this date" });
+    }
+
+    const saved = await Delivery.insertMany(newDeliveries);
+    res.status(201).json({ success: true, deliveries: saved });
   } catch (err) {
-    res.status(400).json({ message: "Error deleting delivery", error: err.message });
+    res.status(500).json({ success: false, message: "Error saving bulk deliveries", error: err.message });
   }
 });
 
-// -----------------------------
-// Get delivery stats for a customer for a specific month
-// -----------------------------
-router.get("/stats/:customerId/:year/:month", async (req, res) => {
+/**
+ * 📌 Get deliveries for a given date (or today if not provided)
+ * Example: GET /api/deliveries?date=YYYY-MM-DD
+ */
+router.get("/", async (req, res) => {
   try {
-    const { customerId, year, month } = req.params;
+    let { date } = req.query;
+    let target = date ? new Date(date) : new Date();
+    target.setHours(0, 0, 0, 0);
 
-    const startDate = new Date(Number(year), Number(month) - 1, 1);
-    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59);
+    let nextDay = new Date(target);
+    nextDay.setDate(target.getDate() + 1);
 
     const deliveries = await Delivery.find({
-      customer: customerId,
-      date: { $gte: startDate, $lte: endDate },
-    });
+      date: { $gte: target, $lt: nextDay },
+    }).populate("customer", "name phone address");
 
-    const deliveredDays = deliveries.filter(d => d.status === "delivered").length;
-    const missedDays = deliveries.filter(d => d.status === "missed").length;
-
-    res.json({ deliveredDays, missedDays, totalDays: deliveries.length });
+    res.json({ success: true, deliveries });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching stats", error: err.message });
+    res.status(500).json({ success: false, message: "Error fetching deliveries", error: err.message });
+  }
+});
+
+/**
+ * 📌 Get a specific delivery by ID
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const delivery = await Delivery.findById(req.params.id).populate("customer");
+    if (!delivery) return res.status(404).json({ success: false, message: "Delivery not found" });
+    res.json({ success: true, delivery });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching delivery", error: err.message });
+  }
+});
+
+/**
+ * 📌 Update a delivery
+ * Body: { status?, notes? }
+ */
+router.put("/:id", async (req, res) => {
+  try {
+    const { status, notes } = req.body;
+
+    const updated = await Delivery.findByIdAndUpdate(
+      req.params.id,
+      { status, notes },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ success: false, message: "Delivery not found" });
+    res.json({ success: true, delivery: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error updating delivery", error: err.message });
+  }
+});
+
+/**
+ * 📌 Delete a delivery
+ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Delivery.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: "Delivery not found" });
+    res.json({ success: true, message: "Delivery deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error deleting delivery", error: err.message });
   }
 });
 
