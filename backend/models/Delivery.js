@@ -7,18 +7,11 @@ const deliverySchema = new mongoose.Schema(
       ref: "Customer",
       required: true,
     },
-    date: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
+    date: { type: Date, required: true },
     status: {
       type: String,
       enum: ["delivered", "missed"],
       default: "delivered",
-    },
-    notes: {
-      type: String,
     },
   },
   { timestamps: true }

@@ -1,82 +1,51 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Button, FlatList, StyleSheet, Alert } from "react-native";
+import { View, Text, Button, FlatList, StyleSheet } from "react-native";
 import axios from "axios";
-import { useIsFocused } from "@react-navigation/native"; 
-import HorizontalDatePicker from "../components/HorizontalDatePicker"; // 👈 import calendar
+import { useIsFocused } from "@react-navigation/native";
+import HorizontalDatePicker from "../components/HorizontalDatePicker";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://192.168.1.4:8080"; // replace with your machine IP
 
 const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    if (isFocused) fetchCustomers();
-  }, [isFocused]);
+    if (isFocused) fetchDeliveries();
+  }, [isFocused, selectedDate]);
 
-  const fetchCustomers = async () => {
+  const fetchDeliveries = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/customers`);
-      setCustomers(res.data);
+      const dateString = selectedDate.toISOString().split("T")[0];
+      const res = await axios.get(`${API_URL}/api/deliveries?date=${dateString}`);
+      setCustomers(res.data.deliveries || []); // deliveries array from backend
     } catch (err) {
-      console.error("Error fetching customers:", err);
+      console.error("Error fetching deliveries:", err);
     }
-  };
-
-  const deleteCustomer = async (id: string) => {
-    Alert.alert(
-      "Delete Customer",
-      "Are you sure you want to delete this customer?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await axios.delete(`${API_URL}/api/customers/${id}`);
-              setCustomers(customers.filter((c) => c._id !== id));
-            } catch (err) {
-              console.error("Error deleting customer:", err);
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (
     <View style={styles.container}>
-      {/* Calendar */}
-      <HorizontalDatePicker />
+      <HorizontalDatePicker onDateChange={setSelectedDate} />
+      <Text style={styles.header}>Deliveries for {selectedDate.toDateString()}</Text>
 
-      <Text style={styles.header}>Customers</Text>
       <FlatList
         data={customers}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.item}>
-            <Text style={styles.name}>{item.name}</Text>
-            <View style={styles.buttonsContainer}>
-              <Button
-                title="Edit"
-                onPress={() =>
-                  navigation.navigate("EditCustomer", { customerId: item._id })
-                }
-              />
-              <Button
-                title="Delete"
-                color="red"
-                onPress={() => deleteCustomer(item._id)}
-              />
-            </View>
+            <Text style={styles.name}>{item.customer?.name}</Text>
+            <Text style={{ color: item.status === "delivered" ? "green" : "red" }}>
+              {item.status}
+            </Text>
           </View>
         )}
+        ListEmptyComponent={<Text>No deliveries marked.</Text>}
       />
-      <Button
-        title="Add Customer"
-        onPress={() => navigation.navigate("AddCustomer")}
-      />
+
+      <Button title="Mark Today's Deliveries" onPress={() => navigation.navigate("MarkDeliveries")} />
+      <Button title="All Customers" onPress={() => navigation.navigate("AllCustomers")} />
     </View>
   );
 };
@@ -85,15 +54,7 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { fontSize: 22, fontWeight: "bold", marginVertical: 10 },
-  item: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between", 
-    paddingVertical: 10, 
-    borderBottomWidth: 1, 
-    borderColor: "#ccc" 
-  },
-  name: { fontSize: 18 },
-  buttonsContainer: { flexDirection: "row", gap: 10 },
+  header: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
+  item: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderColor: "#ddd" },
+  name: { fontSize: 16 },
 });
