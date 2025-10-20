@@ -26,7 +26,7 @@ interface Customer {
 }
 
 // Use the proper Expo Constants method for consistency
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL || "https://fruit-basket-mhc3.onrender.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 
 const api = axios.create({ baseURL: API_URL, timeout: 8000 });
 

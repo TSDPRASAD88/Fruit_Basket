@@ -42,7 +42,7 @@ type MarkDeliveriesRouteProp = RouteProp<
 >;
 
 // 🎯 Use the proper Expo Constants method
-const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL || "https://fruit-basket-mhc3.onrender.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 
 
 const MarkDeliveries = () => {
