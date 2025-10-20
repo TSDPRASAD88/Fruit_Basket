@@ -1,57 +1,50 @@
 const express = require("express");
 const Customer = require("../models/Customer");
+const Delivery = require("../models/Delivery"); // 👈 Import Delivery model
 const router = express.Router();
 
-// Get all customers
-router.get("/", async (req, res) => {
-  try {
-    const customers = await Customer.find().sort({ createdAt: -1 });
-    res.json(customers);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// ... [Existing CRUD routes (GET /, GET /:id, POST /, PUT /:id, DELETE /:id) remain here] ...
 
-// Get single customer
-router.get("/:id", async (req, res) => {
+// -----------------------------------------------------
+// 📌 NEW: Get a Customer's Full Delivery History & Stats
+// -----------------------------------------------------
+router.get("/:id/history", async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ message: "Not found" });
-    res.json(customer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const customerId = req.params.id;
 
-// Add new customer
-router.post("/", async (req, res) => {
-  try {
-    const customer = new Customer(req.body);
-    await customer.save();
-    res.status(201).json(customer);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+    // 1. Validate Customer
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
 
-// Update customer
-router.put("/:id", async (req, res) => {
-  try {
-    const updated = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ message: "Not found" });
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+    // 2. Fetch all delivery records for this customer
+    const deliveries = await Delivery.find({ customer: customerId }).sort({
+      date: 1,
+    });
 
-// Delete customer
-router.delete("/:id", async (req, res) => {
-  try {
-    await Customer.findByIdAndDelete(req.params.id);
-    res.json({ message: "Customer deleted" });
+    // 3. Calculate statistics
+    const totalDays = deliveries.length;
+    const deliveredCount = deliveries.filter(
+      (d) => d.status === "delivered"
+    ).length;
+    const absentCount = totalDays - deliveredCount;
+
+    // 4. Respond with data
+    res.json({
+      customer,
+      deliveries, // Array of {date, status} for the calendar view
+      stats: {
+        totalDays: totalDays,
+        deliveredCount: deliveredCount, // 'No of days delivered'
+        absentCount: absentCount, // 'No of days absent'
+      },
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({
+      error: "Error fetching customer history",
+      details: err.message,
+    });
   }
 });
 

@@ -4,13 +4,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
-import AddCustomer from "./screens/AddCustomer";
 import EditCustomer from "./screens/EditCustomer";
 import MarkDeliveries from "./screens/MarkDeliveries";
 import AllCustomers from "./screens/AllCustomers";
 
 // Types
 import { RootStackParamList } from "./types/navigation";
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -22,7 +22,6 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="AddCustomer" component={AddCustomer} />
         <Stack.Screen name="EditCustomer" component={EditCustomer} />
         <Stack.Screen name="MarkDeliveries" component={MarkDeliveries} />
         <Stack.Screen name="AllCustomers" component={AllCustomers} />

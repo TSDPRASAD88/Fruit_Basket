@@ -1,178 +1,3 @@
-// import React, { useState, useCallback } from "react";
-// import { View, Text, FlatList, StyleSheet, Button } from "react-native";
-// import axios from "axios";
-// import { useFocusEffect } from "@react-navigation/native";
-
-// const API_URL = process.env.EXPO_PUBLIC_API_URL; // ✅ use env instead of hardcoding
-
-// export default function AllCustomers({ navigation }: any) {
-//   const [customers, setCustomers] = useState<any[]>([]);
-
-//   const fetchCustomers = async () => {
-//     try {
-//       const res = await axios.get(`${API_URL}/api/customers`);
-//       setCustomers(res.data);
-//     } catch (err) {
-//       console.error("Error fetching customers:", err);
-//     }
-//   };
-
-//   // 🔄 Re-fetch whenever screen is focused
-//   useFocusEffect(
-//     useCallback(() => {
-//       fetchCustomers();
-//     }, [])
-//   );
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.header}>All Customers</Text>
-//       <FlatList
-//         data={customers}
-//         keyExtractor={(item) => item._id}
-//         renderItem={({ item }) => (
-//           <View style={styles.item}>
-//             <Text>{item.name}</Text>
-//           </View>
-//         )}
-//         ListEmptyComponent={<Text>No customers found.</Text>}
-//       />
-//       <Button
-//         title="Add Customer"
-//         onPress={() => navigation.navigate("AddCustomer")}
-//       />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 16 },
-//   header: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
-//   item: { paddingVertical: 8, borderBottomWidth: 1, borderColor: "#ddd" },
-// });
-
-
-// import React, { useState, useCallback } from "react";
-// import {
-//   View,
-//   Text,
-//   FlatList,
-//   StyleSheet,
-//   Button,
-//   TouchableOpacity,
-//   Alert,
-//   Image,
-// } from "react-native";
-// import axios from "axios";
-// import { useFocusEffect } from "@react-navigation/native";
-
-// const API_URL = process.env.EXPO_PUBLIC_API_URL; // ✅ from .env
-
-// export default function AllCustomers({ navigation }: any) {
-//   const [customers, setCustomers] = useState<any[]>([]);
-
-//   const fetchCustomers = async () => {
-//     try {
-//       const res = await axios.get(`${API_URL}/api/customers`);
-//       setCustomers(res.data);
-//     } catch (err) {
-//       console.error("Error fetching customers:", err);
-//     }
-//   };
-
-//   // 🔄 Refresh on screen focus
-//   useFocusEffect(
-//     useCallback(() => {
-//       fetchCustomers();
-//     }, [])
-//   );
-
-//   // 🗑️ Delete customer
-//   const deleteCustomer = async (id: string) => {
-//     Alert.alert("Delete Customer", "Are you sure you want to delete this customer?", [
-//       { text: "Cancel", style: "cancel" },
-//       {
-//         text: "Delete",
-//         style: "destructive",
-//         onPress: async () => {
-//           try {
-//             await axios.delete(`${API_URL}/api/customers/${id}`);
-//             fetchCustomers(); // Refresh after delete
-//           } catch (err) {
-//             console.error("Error deleting customer:", err);
-//           }
-//         },
-//       },
-//     ]);
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.header}>All Customers</Text>
-//       <FlatList
-//         data={customers}
-//         keyExtractor={(item) => item._id}
-//         renderItem={({ item }) => (
-//           <View style={styles.item}>
-//             <View style={{ flex: 1 }}>
-//               <Text style={styles.name}>{item.name}</Text>
-//               <Text>{item.phone}</Text>
-//               <Text>{item.address}</Text>
-//             </View>
-
-//             {/* ✏️ Edit button */}
-//             <TouchableOpacity
-//               onPress={() => navigation.navigate("EditCustomer", { customer: item })}
-//               style={styles.iconButton}
-//             >
-//               <Image
-//                 source={{
-//                   uri: "https://img.icons8.com/ios-filled/50/0000FF/edit.png",
-//                 }}
-//                 style={styles.icon}
-//               />
-//             </TouchableOpacity>
-
-//             {/* 🗑️ Delete button */}
-//             <TouchableOpacity
-//               onPress={() => deleteCustomer(item._id)}
-//               style={styles.iconButton}
-//             >
-//               <Image
-//                 source={{
-//                   uri: "https://img.icons8.com/ios-filled/50/FF0000/delete-forever.png",
-//                 }}
-//                 style={styles.icon}
-//               />
-//             </TouchableOpacity>
-//           </View>
-//         )}
-//         ListEmptyComponent={<Text>No customers found.</Text>}
-//       />
-//       <Button
-//         title="Add Customer"
-//         onPress={() => navigation.navigate("AddCustomer")}
-//       />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 16 },
-//   header: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
-//   item: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     paddingVertical: 10,
-//     borderBottomWidth: 1,
-//     borderColor: "#ddd",
-//   },
-//   name: { fontSize: 16, fontWeight: "bold" },
-//   iconButton: { marginHorizontal: 8 },
-//   icon: { width: 24, height: 24 },
-// });
-
-
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -189,16 +14,19 @@ import axios from "axios";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Constants from "expo-constants";
 
+// Updated interface to reflect the new backend model fields
 interface Customer {
   _id: string;
   name: string;
   phone?: string;
   address?: string;
+  mealPlan?: string;
+  pricePerDay?: number;
+  startDate?: string;
 }
 
-const API_URL =
-  (Constants.expoConfig && (Constants.expoConfig as any).extra?.apiUrl) ||
-  "http://192.168.1.4:8080";
+// Use the proper Expo Constants method for consistency
+const API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL || "https://fruit-basket-mhc3.onrender.com";
 
 const api = axios.create({ baseURL: API_URL, timeout: 8000 });
 
@@ -211,7 +39,8 @@ export default function AllCustomers() {
     try {
       setLoading(true);
       const res = await api.get("/api/customers");
-      setCustomers(res.data || []);
+      // Ensure we get the full data set, including new fields
+      setCustomers(res.data || []); 
     } catch (err) {
       console.error("[AllCustomers] fetch error:", err);
       Alert.alert("Error", "Failed to load customers. Check backend/network.");
@@ -249,13 +78,14 @@ export default function AllCustomers() {
       }
       if (!confirmed) return;
 
-      const previous = customers;
+      // Optimistic update
       setCustomers((prev) => prev.filter((c) => c._id !== id));
 
       await api.delete(`/api/customers/${id}`);
     } catch (err) {
       console.error("[AllCustomers] delete error:", err);
-      await fetchCustomers(); // rollback
+      // Rollback on failure
+      await fetchCustomers(); 
       Alert.alert("Error", "Failed to delete customer. Try again.");
     }
   };
@@ -271,12 +101,13 @@ export default function AllCustomers() {
 
   return (
     <View style={styles.container}>
-      {/* ➕ Add Customer Button */}
+      {/* Updated to navigate to EditCustomer without a customerId to trigger ADD mode */}
       <Button
-        title="Add Customer"
+        title="Add New Customer"
         onPress={() =>
-          navigation.navigate("AddCustomer", {
-            onGoBack: fetchCustomers, // callback to refresh list after adding
+          navigation.navigate("EditCustomer", {
+            customerId: null, // Signals the editor to be in ADD mode
+            onGoBack: fetchCustomers, // Callback to refresh list after adding
           })
         }
       />
@@ -285,18 +116,20 @@ export default function AllCustomers() {
         data={customers}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
+          // 🎯 Ensure NO extra whitespace or characters are outside of this <View>
           <View style={styles.customerCard}>
             <View style={styles.info}>
               <Text style={styles.customerName}>{item.name}</Text>
+              <Text style={styles.subText}>{item.mealPlan || 'N/A'}</Text>
               {item.phone ? <Text style={styles.subText}>{item.phone}</Text> : null}
-              {item.address ? <Text style={styles.subText}>{item.address}</Text> : null}
             </View>
 
             <View style={styles.actions}>
               <Pressable
+                // Pass the customer ID for EDIT mode
                 onPress={() =>
                   navigation.navigate("EditCustomer", {
-                    customer: item,
+                    customerId: item._id, // Signals the editor to fetch data
                     onGoBack: fetchCustomers, // refresh after edit
                   })
                 }
@@ -308,7 +141,7 @@ export default function AllCustomers() {
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
               >
-                <Text style={styles.actionText}>Edit</Text>
+                <Text style={styles.actionText}>Edit/View</Text>
               </Pressable>
 
               <Pressable
@@ -329,7 +162,7 @@ export default function AllCustomers() {
         ListEmptyComponent={
           <Text style={{ textAlign: "center", marginTop: 20 }}>No customers found.</Text>
         }
-        contentContainerStyle={customers.length === 0 ? { flex: 1 } : undefined}
+        contentContainerStyle={customers.length === 0 ? { flexGrow: 1 } : undefined}
       />
     </View>
   );
