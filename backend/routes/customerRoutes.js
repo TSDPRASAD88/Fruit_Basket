@@ -4,7 +4,7 @@ const Delivery = require("../models/Delivery"); // Import Delivery model
 const router = express.Router();
 
 // =======================================================
-// 1. GET ALL CUSTOMERS (Fixes the 404 error on /api/customers)
+// 1. GET ALL CUSTOMERS (Fixes the 404 error on /api/customers)/
 // =======================================================
 router.get("/", async (req, res) => {
     try {
