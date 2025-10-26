@@ -8,9 +8,7 @@ const customerSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     email: { type: String, trim: true, unique: true, sparse: true }, // Optional for authentication/contact
 
-    // Business & Billing Data
-    mealPlan: { type: String, required: true, trim: true }, // e.g., 'Keto', 'Standard', 'Detox'
-    pricePerDay: { type: Number, required: true, min: 0 }, // Daily rate for billing
+    // Business & Billing Data (Removed mealPlan and pricePerDay)
     startDate: { type: Date, default: Date.now }, // When the customer started the service
     
     // Status
